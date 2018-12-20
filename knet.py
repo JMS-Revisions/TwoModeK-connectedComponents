@@ -113,40 +113,6 @@ class TM_Graph(object):
 
 		plt.show()
 
-	def draw_girvan(self, G):
-		comp = community.girvan_newman(G)
-		k = 4
-		pos=nx.spring_layout(G)
-		#HSV_tuples = [(x*1.0/k, 0.5, 0.5) for x in range(k)]
-		#RGB_tuples = map(lambda x: colorsys.hsv_to_rgb(*x), HSV_tuples)
-
-
-		a = {}
-		for communities in itertools.islice(comp, k):
-			num_coms = len(tuple(sorted(c) for c in communities))
-			if not (num_coms == k):
-				continue 
-			for i in range(num_coms):
-				key = i
-				val = tuple(sorted(c) for c in communities)[i]
-
-				#print val
-				a[key] = val
-
-
-		#print a
-		for key in a:
-			color = numpy.random.rand(3,)
-			nx.draw_networkx_nodes(G,pos,
-	                   nodelist=a[key],
-	                   node_color=color)
-
-			nx.draw_networkx_edges(G,pos)
-			nx.draw_networkx_labels(G, pos)
-
-		plt.show()
-
-
 	def get_os_conn(self, G, A, B):
 		os_cut = self.get_os_cut(G, A, B)
 
@@ -155,182 +121,11 @@ class TM_Graph(object):
 
 		return len(os_cut)
 
-
-
-
-
-
-
-
-
-
-
-
-	def draw_communities(self, G, comms):
-		pos=nx.spring_layout(G)
-
-		for comm in comms:
-			color = numpy.random.rand(3,)
-			nx.draw_networkx_nodes(G,pos,
-	                   nodelist=comm,
-	                   node_color=color)
-
-			nx.draw_networkx_edges(G,pos)
-			nx.draw_networkx_labels(G, pos)
-
-		plt.show()
-
-
-
-	def find_communities(self, G, k):
-		#get the node sets and a single minimal os cut
-		comms = []
-		A, B = self.get_node_sets(G)
-		cut = self.get_os_cut(G, A, B)
-		                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-		G_original = G.copy()
-
-
-		#remove the nodes in the cut
-		for node in cut:
-			if node in G.nodes():
-				G.remove_node(node)
-
-		#get all of the new components as a result of the removed cut
-		comps = list(components.connected_component_subgraphs(G))
-
-		d = {}
-		highest_num_edges = 0
-
-		#iterate over new components
-		for c in comps:
-			
-			removed_edges = self.get_removed_edges(c, cut, G_original)
-			d[c] = len(removed_edges)
-			if len(removed_edges) >= highest_num_edges:
-				highest_num_edges = len(removed_edges)
-
-
-		for key in d:
-			if d[key] == highest_num_edges:
-				#print key.nodes()
-				#print cut
-				comms.append(list(key.nodes()) + list(cut))
-			else:
-				#print key.nodes()
-				#print cut
-				comms.append(list(key.nodes()))
-
-
-		#self.find_communities(self, G_original.subgraph(comm))
-
-		#print comms
-		#self.draw_communities(G_original, comms)
-		return comms
-	
-
-
-
-
-
-
-	"""
-	def find_communities_backup(self, G, k, comms = []):
-		#get the node sets and a single minimal os cut
-		A, B = self.get_node_sets(G)
-		cut = self.get_os_cut(G, A, B)
-		                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
-		G_original = G.copy()
-
-
-		#remove the nodes in the cut
-		for node in cut:
-			if node in G.nodes():
-				G.remove_node(node)
-
-		#get all of the new components as a result of the removed cut
-		comps = list(components.connected_component_subgraphs(G))
-
-		d = {}
-		highest_num_edges = 0
-
-		#iterate over new components
-		for c in comps:
-			
-			removed_edges = self.get_removed_edges(c, cut, G_original)
-			d[c] = len(removed_edges)
-			if len(removed_edges) >= highest_num_edges:
-				highest_num_edges = len(removed_edges)
-
-
-		for key in d:
-			if d[key] == highest_num_edges:
-				#print key.nodes()
-				#print cut
-				comms.append(list(key.nodes()) + list(cut))
-			else:
-				#print key.nodes()
-				#print cut
-				comms.append(list(key.nodes()))
-
-
-		#self.find_communities(self, G_original.subgraph(comm))
-
-		#print comms
-		#self.draw_communities(G_original, comms)
-
-
-
-		c.add_nodes_from(list(cut), bipartite = 1)
-		c.add_edges_from(removed_edges)
-		comms_to_add.append(c.nodes())
-
-	"""
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 	def cohesive_blocking(self, G, conn, emb = 0, blocks = [], i = 0, highest_conn = 1):
 
 		#get the node sets and a single minimal os cut
 		A, B = self.get_node_sets(G)
 		cut = self.get_os_cut(G, A, B)
-		#print "CUT: %s" % (cut)
-		#print "Size of network: %s" % (len(G.nodes()))
-		#print "i: %s" % (i)
-
 
 		#if component has the highest conn seen so far, append to blocks
 		if conn == highest_conn:
@@ -357,9 +152,6 @@ class TM_Graph(object):
 		#iterate over new components
 		for c in comps:
 
-			#if i == 0:
-				#print "at beginning!!"
-
 			#get every component with the latest cut added back in
 			removed_edges = self.get_removed_edges(c, cut, G_original)
 			c.add_nodes_from(list(cut), bipartite = 1)
@@ -384,24 +176,11 @@ class TM_Graph(object):
 			#ancestors, increase embeddedness and append to parents list. 
 			#Otherwise, just recurse normally
 			if cur_conn > highest_conn:
-				#print "cur_conn: %s" % (cur_conn)
-				#print "conn: %s" % (conn)
 				self.parents.append(G_original)
-				#print "increasing emb from %s to %s..." % (emb, emb + 1)
 				self.cohesive_blocking(c, cur_conn, emb + 1, blocks, i + 1, cur_conn)
 			else:
 				self.cohesive_blocking(c, cur_conn, emb, blocks, i + 1, highest_conn)
 
-			#print "Finished a component"
-
-			"""
-			#print "parents: %s" % (self.parents)
-			parents_copy = deepcopy(self.parents)
-			self.chain.append(parents_copy)
-
-			if self.parents:
-				del self.parents[-1]
-			"""
 
 		return blocks
 
@@ -456,11 +235,7 @@ class TM_Graph(object):
 		#if trivial graph, return no cut
 		if len(G.nodes()) <= 1:
 			return []
-
-		#build auxiliary networks
-		#H = self.rest_build_auxiliary_node_connectivity(G, A, B)
-		#R = build_residual_network(H, 'capacity')
-
+		
 		seen = []
 		os_cuts = []
 
